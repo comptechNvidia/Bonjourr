@@ -1,0 +1,52 @@
+name: NodeJS with Gulp
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x, 22.x]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Cache npm dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Gulp tasks
+        run: gulp
+
+      # Optional: Run tests after building (if you have tests defined)
+      - name: Run tests
+        run: npm test
+
+      # Optional: Notify on success
+      - name: Notify success
+        if: success()
+        run: echo "Build completed successfully on Node.js version ${{ matrix.node-version }}"
+
+      # Optional: Notify on failure
+      - name: Notify failure
+        if: failure()
+        run: echo "Build failed on Node.js version ${{ matrix.node-version }}. Check the logs for details."
